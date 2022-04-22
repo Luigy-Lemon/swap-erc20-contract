@@ -12,6 +12,8 @@ contract SwapERC20 is Ownable {
     // bytes4(keccak256(bytes("permit(address,address,uint256,uint256,uint8,bytes32,bytes32)")));
     bytes4 constant _PERMIT_SIGNATURE = 0xd505accf;
 
+    address public VAULT;
+
     // Swap ratio from TOKEN_X to TOKEN_Y multiplied by 1e10 eg: 10000000000 = 1:1 swap if both have same decimals, 4200000000 = 100:42 swap meaning that for every 100 TOKEN_X you get 42 TOKEN_Y.
     uint256 public SWAP_RATIO = 10000000000;
 
@@ -43,6 +45,11 @@ contract SwapERC20 is Ownable {
      */
     event NewSwapRatio(uint256 newSwapRatio);
 
+    /**
+     * @dev Emitted when the owner modifies the VAULT address
+     */
+    event NewVault(address newVault);
+
 
     /**
      * @dev Emitted when the owner withdraw tokens
@@ -61,12 +68,14 @@ contract SwapERC20 is Ownable {
         IERC20 _tokenX,
         IERC20 _tokenY,
         uint256 duration,
-        uint256 swapRatio
+        uint256 swapRatio,
+        address vaultAddress
     ) {
         tokenX = _tokenX;
         tokenY = _tokenY;
         withdrawTimeout = block.timestamp + duration;
         SWAP_RATIO = swapRatio;
+        VAULT = vaultAddress;
     }
 
     /**
@@ -78,13 +87,12 @@ contract SwapERC20 is Ownable {
     function swapXtoY(uint256 tokenXAmount, bytes calldata _permitData)
         public
     {
-        // receive and burn TOKEN_X tokens
+        // receive and send TOKEN_X tokens to VAULT
         if (_permitData.length != 0) {
             _permit(address(tokenX), tokenXAmount, _permitData);
         }
 
-        tokenX.safeTransferFrom(msg.sender, address(this), tokenXAmount);
-        ERC20Burnable(address(tokenX)).burn(tokenXAmount);
+        tokenX.safeTransferFrom(msg.sender, VAULT, tokenXAmount);
 
         // transfer TOKEN_Y tokens
         uint256 tokenYAmount = (tokenXAmount * SWAP_RATIO) / 1e10;
@@ -123,6 +131,16 @@ contract SwapERC20 is Ownable {
         SWAP_RATIO = newSwapRatio;    
         emit NewSwapRatio(newSwapRatio);    
     }
+
+    /**
+     * @notice Method that allows the owner to modify the Vault address
+     * @param newVault new vault address
+     */
+    function modifyVault(address newVault) public onlyOwner {
+        VAULT = newVault;    
+        emit NewVault(newVault);    
+    }
+
 
 
     /**
