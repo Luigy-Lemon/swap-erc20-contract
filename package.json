@@ -1,0 +1,14 @@
+{
+  "name": "swap-erc20-contract",
+  "version": "1.0.0",
+  "description": "Simple contract based on StakeToGnoMerge to enable simple one way swaps of two ERC20 tokens",
+  "main": "",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Luigy-Lemon",
+  "license": "ISC",
+  "dependencies": {
+    "@openzeppelin/contracts": "^4.5.0"
+  }
+}
